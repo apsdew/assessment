@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -14,9 +15,8 @@ var db *sql.DB
 
 func main() {
 	expenses.InitDB()
-
 	// os.Setenv("PORT", "2565")
-	// port := os.Getenv("PORT")
+	serverPort := ":" + os.Getenv("PORT")
 	e := echo.New()
 
 	e.Use(middleware.BasicAuth(func(user, pass string, c echo.Context) (bool, error) {
@@ -30,11 +30,10 @@ func main() {
 	e.Use(middleware.Recover())
 
 	g := e.Group("/expenses")
-
 	g.POST("", expenses.CreateExpensesHandler)
 	g.GET("/:id", expenses.GetExpensesHandler)
-	// g.PUT("/:id", expenses.UpdateExpensesHandler)
+	g.PUT("/:id", expenses.UpdateExpensesHandler)
 	g.GET("", expenses.GetAllExpensesHandler)
 
-	log.Fatal(e.Start(":2565"))
+	log.Fatal(e.Start(serverPort))
 }

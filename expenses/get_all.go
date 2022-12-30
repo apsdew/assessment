@@ -8,7 +8,7 @@ import (
 )
 
 func GetAllExpensesHandler(c echo.Context) error {
-	stmt, err := db.Prepare("SELECT * FROM expenses")
+	stmt, err := db.Prepare("SELECT * FROM expenses ORDER BY id")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Err{Message: "can't prepare query all expenses statment:" + err.Error()})
 	}

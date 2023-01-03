@@ -15,6 +15,8 @@ var db *sql.DB
 
 func main() {
 	expenses.InitDB()
+	h := expenses.NewApplication(db)
+
 	// os.Setenv("PORT", "2565")
 	serverPort := ":" + os.Getenv("PORT")
 	e := echo.New()
@@ -30,10 +32,10 @@ func main() {
 	e.Use(middleware.Recover())
 
 	g := e.Group("/expenses")
-	g.POST("", expenses.CreateExpensesHandler)
-	g.GET("/:id", expenses.GetExpensesHandler)
-	g.PUT("/:id", expenses.UpdateExpensesHandler)
-	g.GET("", expenses.GetAllExpensesHandler)
+	g.POST("", h.CreateExpensesHandler)
+	g.GET("/:id", h.GetExpensesHandler)
+	g.PUT("/:id", h.UpdateExpensesHandler)
+	g.GET("", h.GetAllExpensesHandler)
 
 	log.Fatal(e.Start(serverPort))
 }

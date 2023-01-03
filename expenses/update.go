@@ -8,7 +8,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func UpdateExpensesHandler(c echo.Context) error {
+func (h *handler) UpdateExpensesHandler(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})

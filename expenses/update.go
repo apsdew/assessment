@@ -9,12 +9,14 @@ import (
 )
 
 func (h *handler) UpdateExpensesHandler(c echo.Context) error {
-	id, err := strconv.Atoi(c.Param("id"))
+	paramId := c.Param("id")
+	id, err := strconv.Atoi(paramId)
+
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
 
-	e := Expenses{}
+	var e Expenses
 	err = c.Bind(&e)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: "invalid data"})
@@ -24,11 +26,11 @@ func (h *handler) UpdateExpensesHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Err{Message: "invalid data"})
 	}
 
-	result, err := db.Exec(`
+	result, err := h.DB.Exec(`
 	UPDATE expenses
 	set title=$1,amount=$2,note=$3,tags=$4
 	WHERE id=$5;
-	`, e.Title, e.Amount, e.Note, pq.Array(e.Tags), id)
+	`, e.Title, e.Amount, e.Note, pq.Array(e.Tags), paramId)
 
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})

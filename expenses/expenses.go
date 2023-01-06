@@ -21,3 +21,5 @@ type handler struct {
 func NewApplication(db *sql.DB) *handler {
 	return &handler{db}
 }
+
+const serverPort = 2565

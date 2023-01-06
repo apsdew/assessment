@@ -1,36 +1,41 @@
 package expenses
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/labstack/echo/v4"
+	"github.com/lib/pq"
+	"github.com/nozadewz/assessment/request"
+	"github.com/nozadewz/assessment/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAllExpensesHandler(t *testing.T) {
-	// Arrange
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/expenses", strings.NewReader(""))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-
-	testcase := Expenses{
-		ID:     0,
-		Title:  "strawberry smoothie",
-		Amount: 79,
-		Note:   "night market promotion discount 10 bath",
-		Tags:   []string{"food", "beverage"},
+	//Arrange
+	expecteds := []Expenses{
+		{
+			ID:     1,
+			Title:  "strawberry smoothie",
+			Amount: 79,
+			Note:   "night market promotion discount 10 bath",
+			Tags:   []string{"food", "beverage"},
+		},
+		{
+			ID:     2,
+			Title:  "strawberry smoothie",
+			Amount: 79,
+			Note:   "night market promotion discount 10 bath",
+			Tags:   []string{"food", "beverage"},
+		},
 	}
 
-	newsMockRows := sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).AddRow(ResString(testcase))
+	ctx, res := request.GetRequest(http.MethodGet, request.GetUri("expenses"), "")
 
-	fmt.Println(newsMockRows)
+	newsMockRows := sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"})
+	for _, i := range expecteds {
+		newsMockRows.AddRow(i.ID, i.Title, i.Amount, i.Note, pq.Array(i.Tags))
+	}
 
 	db, mock, err := sqlmock.New()
 	mock.ExpectQuery("SELECT (.+) FROM expenses ORDER BY id").WillReturnRows(newsMockRows)
@@ -38,27 +43,20 @@ func TestGetAllExpensesHandler(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	h := handler{db}
-	c := e.NewContext(req, rec)
-	expected := "[{\"ID\":1,\"Title\":\"strawberry smoothie\",\"Amount\":79,\"Note\":\"night market promotion discount 10 bath\",\"Tags\":[\"food\",\"beverage\"]}]"
 
-	// Act
-	err = h.CreateExpensesHandler(c)
+	//Act
+	err = h.GetAllExpensesHandler(ctx)
 
-	// Assertions
+	actuals := []Expenses{}
+	err = util.ConvertToStruct(res, &actuals)
+	if err != nil {
+		t.Errorf("Test Failed because: %v", err)
+	}
+
+	//Assert
+	assert.NoError(t, err)
 	if assert.NoError(t, err) {
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, expected, strings.TrimSpace(rec.Body.String()))
+		assert.Equal(t, http.StatusOK, res.Code)
+		assert.Equal(t, expecteds, actuals)
 	}
-}
-
-func ResString(reqStruct interface{}) string {
-	if reqStruct == nil {
-		return ""
-	}
-	result, _ := json.Marshal(&reqStruct)
-	return string(result)
-}
-
-func ResStruct(res *httptest.ResponseRecorder, result interface{}) error {
-	return json.Unmarshal([]byte(res.Body.Bytes()), &result)
 }

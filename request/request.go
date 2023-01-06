@@ -13,7 +13,6 @@ func GetRequest(method, url string, body string) (echo.Context, *httptest.Respon
 	req := httptest.NewRequest(method, url, strings.NewReader(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-
 	c := e.NewContext(req, rec)
 	return c, rec
 }
@@ -29,6 +28,7 @@ func GetUri(paths ...string) string {
 }
 
 func GetAuth(next echo.HandlerFunc) echo.HandlerFunc {
+
 	return func(c echo.Context) error {
 		if len(c.Request().Header["Authorization"]) > 0 {
 			if c.Request().Header["Authorization"][0] == "November 10, 2009" {

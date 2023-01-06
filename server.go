@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -14,8 +15,13 @@ import (
 var db *sql.DB
 
 func main() {
-	expenses.InitDB()
-	// os.Setenv("PORT", "2565")
+	db, err := InitDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	h := expenses.NewApplication(db)
+
+	os.Setenv("PORT", "2565")
 	serverPort := ":" + os.Getenv("PORT")
 	e := echo.New()
 
@@ -30,10 +36,40 @@ func main() {
 	e.Use(middleware.Recover())
 
 	g := e.Group("/expenses")
-	g.POST("", expenses.CreateExpensesHandler)
-	g.GET("/:id", expenses.GetExpensesHandler)
-	g.PUT("/:id", expenses.UpdateExpensesHandler)
-	g.GET("", expenses.GetAllExpensesHandler)
+	g.POST("", h.CreateExpensesHandler)
+	g.GET("/:id", h.GetExpensesHandler)
+	g.PUT("/:id", h.UpdateExpensesHandler)
+	g.GET("", h.GetAllExpensesHandler)
 
 	log.Fatal(e.Start(serverPort))
+}
+
+func InitDB() (*sql.DB, error) {
+	os.Setenv("DATABASE_URL", "postgres://yodzpcdo:NFIDn_3NeuQ9LKmHW_NP7Q7JIx6OF7ZU@tiny.db.elephantsql.com/yodzpcdo")
+
+	url := os.Getenv("DATABASE_URL")
+	fmt.Println("url :", url)
+
+	var err error
+	db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal("Connect to database error", err)
+	}
+
+	createTb := `
+	CREATE TABLE IF NOT EXISTS expenses (
+		id SERIAL PRIMARY KEY,
+		title TEXT,
+		amount FLOAT,
+		note TEXT,
+		tags TEXT[]
+	);
+	`
+	_, err = db.Exec(createTb)
+
+	if err != nil {
+		log.Fatal("can't create table", err)
+	}
+
+	return db, nil
 }

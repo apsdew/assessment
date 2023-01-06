@@ -7,27 +7,24 @@ import (
 	"github.com/lib/pq"
 )
 
-func GetAllExpensesHandler(c echo.Context) error {
-	stmt, err := db.Prepare("SELECT * FROM expenses ORDER BY id")
+func (h *handler) GetAllExpensesHandler(c echo.Context) error {
+	rows, err := h.DB.Query("SELECT * FROM expenses ORDER BY id")
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Err{Message: "can't prepare query all expenses statment:" + err.Error()})
+		return c.JSON(http.StatusBadRequest, Err{Message: "Not found your expenses"})
 	}
 
-	rows, err := stmt.Query()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Err{Message: "can't query all expenses:" + err.Error()})
-	}
+	defer rows.Close()
 
-	expenses := []Expenses{}
+	res := []Expenses{}
+	e := Expenses{}
 
 	for rows.Next() {
-		e := Expenses{}
 		err := rows.Scan(&e.ID, &e.Title, &e.Amount, &e.Note, pq.Array(&e.Tags))
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, Err{Message: "can't scan expenses:" + err.Error()})
+			return c.JSON(http.StatusInternalServerError, Err{Message: "can't find expenses please contact admin:" + err.Error()})
 		}
-		expenses = append(expenses, e)
+		res = append(res, e)
 	}
 
-	return c.JSON(http.StatusOK, expenses)
+	return c.JSON(http.StatusOK, res)
 }

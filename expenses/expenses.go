@@ -1,5 +1,7 @@
 package expenses
 
+import "database/sql"
+
 type Expenses struct {
 	ID     int      `json:"id"`
 	Title  string   `json:"title"`
@@ -11,3 +13,13 @@ type Expenses struct {
 type Err struct {
 	Message string `json:"message"`
 }
+
+type handler struct {
+	DB *sql.DB
+}
+
+func NewApplication(db *sql.DB) *handler {
+	return &handler{db}
+}
+
+const serverPort = 2565
